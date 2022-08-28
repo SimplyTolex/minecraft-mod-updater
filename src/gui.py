@@ -1,8 +1,24 @@
-from operator import mod
+# minecraft-mod-updater -- Check updates for Minecraft mods and optionally update them.
+# Copyright (C) 2022  SimplyTolex
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from tkinter import *
 from tkinter import ttk
 import yaml
 import os.path
+import pickledb
 
 root = Tk()
 root.title("minecraft-mod-updater")
@@ -42,6 +58,7 @@ mainframe.columnconfigure(5, weight=30)
 
 next_free_row = 1
 modlist = []
+db = ""
 
 
 def get_file_from_parent_dir(filename:str):
@@ -53,28 +70,46 @@ def get_file_from_parent_dir(filename:str):
     return os.path.abspath(os.path.join(CURRENT_DIR, os.pardir)) + "\\" + filename
 
 
-# Read config
+# Load config
+# TODO: Not sure if I will even use YAML in the future, maybe I will just move everything, including configs to PickleDB
 with open(get_file_from_parent_dir("config.yaml"), "r") as config:
     cfg = yaml.safe_load(config)
-    print(cfg)
 
 
-def read_modlist():
-    """
-    Modlist is just a long txt file how batch-importing mods, this is not a database, that the app uses.
-    """
-    global modlist
-    
-    with open(get_file_from_parent_dir("modlist.txt"), "r") as list:
-        for line in list:
-            modlist.append(line)
-
-
-def read_modDB():
+def load_modDB():
     """
     modDB is a database that stores everything about imported mods (their id, names, versions, etc.)
     """
-    pass
+    global db
+    db = pickledb.load(get_file_from_parent_dir("modDB.db"), False)
+
+
+def write_modDB(id:str, name:str, current:str, last_latest:str, url:str):
+    global db
+    db.set("version", 1)
+    db.set(id, {"name": name, "current": current, "last_latest": last_latest, "url": url})
+    # Examples:
+    # write_modDB("AABBCCDDEE", "Sodium", "1.2", "1.2", "example.com")
+    # write_modDB("BBCCDDEEFF", "test_mod_1", "1.0", "1.2", "example.com")
+    db.dump()
+
+
+def get_info_from_db():
+    """
+    Reads the database version and depending on it, does different things.
+    Currently, it will fill out the rows in the GUI with every entry, other then the first one (so, everything but version).
+    """
+    match db.get("version"):
+        case 1:
+            for entry in range(1, db.totalkeys()):
+                print(list(db.getall())[entry])
+                key = (list(db.getall())[entry])
+                print(db.get(key))
+                value = db.get(key)
+
+                fill_row(str(key), str(value["name"]), str(value["current"]), str(value["last_latest"]), str(value["url"]))
+        case _:
+            raise Exception("Undefined database version")
 
 
 def fill_row(id:str, name:str, current:str, latest:str, url:str):
@@ -102,10 +137,19 @@ def fill_row(id:str, name:str, current:str, latest:str, url:str):
 
     next_free_row += 1
 
-for i in range(15):
-    fill_row("AABBCCDDEE", "test_mod_1", "1.0", "1.2", "example.com")
 
-read_modlist()
-print(modlist)
+def import_from_modlist():
+    """
+    Modlist is just a long txt file how batch-importing mods, this is not a database, that the app uses.
+    """
+    global modlist
+
+    with open(get_file_from_parent_dir("modlist.txt"), "r") as list:
+        for line in list:
+            modlist.append(line)
+
+
+load_modDB()
+get_info_from_db()
 
 root.mainloop()

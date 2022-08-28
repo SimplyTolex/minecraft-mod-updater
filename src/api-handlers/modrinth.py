@@ -1,4 +1,4 @@
-# minecraft-mod-updater -- TUI application to check updates for mods for Minecraft and an option to update them.
+# minecraft-mod-updater -- Check updates for Minecraft mods and optionally update them.
 # Copyright (C) 2022  SimplyTolex
 #
 # This program is free software: you can redistribute it and/or modify
