@@ -1,0 +1,24 @@
+file
+- add entries
+    - add url
+    - add in-bulk with modlist file
+    - add manually
+    - add automatically by searching mod's filename (unreliable)
+- remove entries
+- rescan mods directory
+
+edit
+- settings
+
+view
+- choose visible columns
+
+mods
+- check all mods for updates
+
+about
+- get help
+- open GitHub page
+- open online documentation
+- check program for updates
+- about program

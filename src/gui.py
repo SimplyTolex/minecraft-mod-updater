@@ -16,6 +16,7 @@
 
 from tkinter import *
 from tkinter import ttk
+from tkinter import font
 import yaml
 import os.path
 import pickledb
@@ -35,17 +36,19 @@ current_column = 3
 latest_column = 4
 url_column = 5
 
-number_label = ttk.Label(mainframe, text="№")
+header_font = font.Font(name= "header_font", size=11, weight='bold')    # def size=9; TODO: make settings
+
+number_label = ttk.Label(mainframe, text="№", font=header_font)
 number_label.grid(column=number_column, row=0, sticky=W)
-id_label = ttk.Label(mainframe, text="ID")
+id_label = ttk.Label(mainframe, text="ID", font=header_font)
 id_label.grid(column=id_column, row=0)
-name_label = ttk.Label(mainframe, text="Name")
+name_label = ttk.Label(mainframe, text="Name", font=header_font)
 name_label.grid(column=name_column, row=0)
-current_label = ttk.Label(mainframe, text="Current")
+current_label = ttk.Label(mainframe, text="Current", font=header_font)
 current_label.grid(column=current_column, row=0)
-latest_label = ttk.Label(mainframe, text="Latest")
+latest_label = ttk.Label(mainframe, text="Latest", font=header_font)
 latest_label.grid(column=latest_column, row=0)
-url_label = ttk.Label(mainframe, text="URL")
+url_label = ttk.Label(mainframe, text="URL", font=header_font)
 url_label.grid(column=url_column, row=0)
 
 mainframe.columnconfigure(0, weight=1)
@@ -55,6 +58,44 @@ mainframe.columnconfigure(3, weight=10)
 mainframe.columnconfigure(4, weight=10)
 mainframe.columnconfigure(5, weight=30)
 # mainframe.rowconfigure(0, weight=1)
+
+root.option_add('*tearOff', FALSE)
+menubar = Menu(root)
+root["menu"] = menubar
+
+menu_file = Menu(menubar)
+menu_add = Menu(menu_file)
+menu_edit = Menu(menubar)
+menu_view = Menu(menubar)
+menu_mods = Menu(menubar)
+menu_about = Menu(menubar)
+menubar.add_cascade(menu=menu_file, label='File')
+menubar.add_cascade(menu=menu_edit, label='Edit')
+menubar.add_cascade(menu=menu_view, label='View')
+menubar.add_cascade(menu=menu_mods, label='Mods')
+menubar.add_cascade(menu=menu_about, label='About')
+
+menu_file.add_cascade(menu=menu_add, label='Add entry...')
+menu_file.add_command(label='Remove entries')
+menu_file.add_command(label='Rescan `mods` directory')
+
+menu_add.add_command(label="Add URL")
+menu_add.add_command(label="Bulk-add with modlist file")
+menu_add.add_command(label="Add manually")
+menu_add.add_command(label="Add automatically by mod's filename")
+
+menu_edit.add_command(label="Preferences")
+
+menu_view.add_command(label="Choose visible columns")
+
+menu_mods.add_command(label="Check all mods for updates")
+
+menu_about.add_command(label="Get help")
+menu_about.add_command(label="Open GitHub page")
+menu_about.add_command(label="Open online documentation")
+menu_about.add_command(label="Check program for updates")
+menu_about.add_command(label="About program")
+
 
 next_free_row = 1
 modlist = []
@@ -121,8 +162,8 @@ def fill_row(id:str, name:str, current:str, latest:str, url:str):
     global latest_column
     global url_column
 
-    mod_number = ttk.Label(mainframe, text=next_free_row)
-    mod_id = ttk.Label(mainframe, text=id)
+    mod_number = ttk.Label(mainframe, text=next_free_row, font="TkFixedFont")
+    mod_id = ttk.Label(mainframe, text=id, font="TkFixedFont")
     mod_name = ttk.Label(mainframe, text=name)
     mod_current = ttk.Label(mainframe, text=current)
     mod_latest = ttk.Label(mainframe, text=latest)
