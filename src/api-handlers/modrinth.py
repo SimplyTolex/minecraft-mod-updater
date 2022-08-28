@@ -15,38 +15,53 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import requests
+import json
 
 input_url = "https://modrinth.com/mod/midnightcontrols"
 headers = {'user-agent': 'github.com/SimplyTolex/minecraft-mod-updater dev0.1 (Open an issue or discussion if something went wrong)'}
 testmod = "midnightcontrols"
+data = []
 
 
 def send_request(url, payload):
     # TODO: make an additional check that the loader and game versions are *actually* correct
     # params=payload makes from "game_versions": ["1.18.2"] -> "game_versions": "1.18.2" which apparantly makes queries to not work.
-    
+
     r = requests.get(url, params=payload, headers=headers, timeout=7)
     print(f"Sending request to: {r.url}")
     r.raise_for_status()
-    return print(r.json())      # NOTE: will need to remove print() for return to work (otherwise it will return null)
+    print(r.json())
+    # return r.json()
+    # parse_versions(r.json)
 
 
 def modrinth_search(input_url):
     ripped_mod_slug = "midnightcontrols"
     url = "https://api.modrinth.com/v2/search"
-    
+
     payload = {"query": ripped_mod_slug, "limit": 1}
-
-    send_request(url, payload)    
-
-
-def modrinth_get_versions(mod_id):
-    url = f"https://api.modrinth.com/v2/project/{mod_id}/version"
-    
-    payload = {"loaders": ["fabric"], "game_versions": ["1.18.2"]}
 
     send_request(url, payload)
 
 
+def modrinth_get_versions(mod_id):
+    url = f"https://api.modrinth.com/v2/project/{mod_id}/version"
+
+    payload = {"loaders": ["fabric"], "game_versions": ["1.18.2"]}
+    # payload = json.dumps(payload, separators=(",", "="))
+    print(payload)
+    # url = f'{url}?loaders={payload["loaders"]}&game_versions={payload["game_versions"]}'
+    send_request(url, payload)
+    # print(url)
+
+
+def parse_versions(r):
+    # data = data
+    # data = json.loads(r)
+    # print(data)
+    pass
+
 # modrinth_search(input_url)
 modrinth_get_versions(testmod)
+# jstest = '{"hi": 2, "b": "hi there"}'
+# parse_versions(jstest)
