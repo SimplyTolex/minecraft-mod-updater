@@ -13,3 +13,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+if __name__ == "__main__":
+    print("CF | `curseforge_api.py` is not supposed to be run like that! Execute `gui.py` instead!")

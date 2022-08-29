@@ -16,9 +16,11 @@
 
 import requests
 import json
+import internal_vars as internal
 
 input_url = "https://modrinth.com/mod/midnightcontrols"
-headers = {'user-agent': 'github.com/SimplyTolex/minecraft-mod-updater dev0.1 (Open an issue or discussion if something went wrong)'}
+headers = {
+    'user-agent': f'github.com/SimplyTolex/minecraft-mod-updater {internal.version} (Open an issue or discussion if something went wrong)'}
 testmod = "midnightcontrols"
 data = []
 
@@ -28,7 +30,7 @@ def send_request(url, payload):
     # params=payload makes from "game_versions": ["1.18.2"] -> "game_versions": "1.18.2" which apparantly makes queries to not work.
 
     r = requests.get(url, params=payload, headers=headers, timeout=7)
-    print(f"Sending request to: {r.url}")
+    print(f"MR | Sending request to: {r.url}")
     r.raise_for_status()
     print(r.json())
     # return r.json()
@@ -61,7 +63,7 @@ def parse_versions(r):
     # print(data)
     pass
 
-# modrinth_search(input_url)
-modrinth_get_versions(testmod)
-# jstest = '{"hi": 2, "b": "hi there"}'
-# parse_versions(jstest)
+
+if __name__ == "__main__":
+    print("MR | `modrinth_api.py` is not supposed to be run like that! Execute `gui.py` instead!")
+

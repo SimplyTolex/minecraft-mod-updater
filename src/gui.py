@@ -1,3 +1,4 @@
+#not !/usr/bin/env python
 # minecraft-mod-updater -- Check updates for Minecraft mods and optionally update them.
 # Copyright (C) 2022  SimplyTolex
 #
@@ -17,10 +18,203 @@
 from tkinter import *
 from tkinter import ttk
 from tkinter import font
+from tkinter import messagebox
 import yaml
 import os.path
 import pickledb
 import webbrowser
+import github_api as gh_api
+import curseforge_api as cf_api
+import modrinth_api as mr_api
+import internal_vars as internal
+
+
+next_free_row = 1
+modlist = []
+db = ""
+
+
+def get_file_from_parent_dir(filename:str):
+    """
+    Helps me to get files in parent directory.
+    Will be mainly used for development, since regular files should be stored in APPDATA anyway.
+    """
+    CURRENT_DIR = os.path.dirname(__file__)
+    return os.path.abspath(os.path.join(CURRENT_DIR, os.pardir)) + "\\" + filename
+
+
+# Load config
+# TODO: Not sure if I will even use YAML in the future, maybe I will just move everything, including configs to PickleDB
+with open(get_file_from_parent_dir("config.yaml"), "r") as config:
+    cfg = yaml.safe_load(config)
+
+
+def init_modDB():
+    """
+    modDB is a database that stores everything about imported mods (their id, names, versions, etc.)
+    """
+    global db
+    db = pickledb.load(get_file_from_parent_dir("modDB.db"), False)
+
+
+def write_modDB(id:str, name:str, current:str, last_latest:str, url:str):
+    global db
+    db.set("version", 1)
+    db.set(id, {"name": name, "current": current, "last_latest": last_latest, "url": url})
+    # Examples:
+    # write_modDB("AABBCCDDEE", "Sodium", "1.2", "1.2", "example.com")
+    # write_modDB("BBCCDDEEFF", "test_mod_1", "1.0", "1.2", "example.com")
+    db.dump()
+
+
+def fill_table_from_db():
+    """
+    Reads the database version and depending on it, does different things.
+    Currently, it will fill out the rows in the GUI with every entry, other then the first one (so, everything but version).
+    """
+    match db.get("version"):
+        case 1:
+            for entry in range(1, db.totalkeys()):
+                print(list(db.getall())[entry])
+                key = (list(db.getall())[entry])
+                print(db.get(key))
+                value = db.get(key)
+
+                fill_row(str(key), str(value["name"]), str(value["current"]), str(value["last_latest"]), str(value["url"]))
+        case _:
+            raise Exception("Undefined database version")
+
+
+def import_from_modlist():
+    """
+    Modlist is just a long txt file how batch-importing mods, this is not a database, that the app uses.
+    """
+    global modlist
+
+    with open(get_file_from_parent_dir("modlist.txt"), "r") as list:
+        for line in list:
+            modlist.append(line)
+
+
+def fill_row(id:str, name:str, current:str, latest:str, url:str):
+    global next_free_row
+    global number_column
+    global id_column
+    global name_column
+    global current_column
+    global latest_column
+    global url_column
+
+    mod_number = ttk.Label(mainframe, text=next_free_row, font="TkFixedFont")
+    mod_id = ttk.Label(mainframe, text=id, font="TkFixedFont")
+    mod_name = ttk.Label(mainframe, text=name)
+    mod_current = ttk.Label(mainframe, text=current)
+    mod_latest = ttk.Label(mainframe, text=latest)
+    mod_url = ttk.Label(mainframe, text=url, cursor="hand2", foreground="blue")
+
+    mod_number.grid(column=number_column, row=next_free_row, sticky=W)
+    mod_id.grid(column=id_column, row=next_free_row)
+    mod_name.grid(column=name_column, row=next_free_row)
+    mod_current.grid(column=current_column, row=next_free_row)
+    mod_latest.grid(column=latest_column, row=next_free_row)
+    mod_url.grid(column=url_column, row=next_free_row)
+
+    mod_url.bind("<Button-1>", lambda e: open_link(url))
+
+    next_free_row += 1
+
+
+def open_link(url:str):
+    webbrowser.open(url)    # Make sure that the link starts with `https://`
+
+
+def ui_remove_entries():
+    pass
+
+
+def ui_rescan_mods():
+    pass
+
+
+def ui_add_url():
+    pass
+
+
+def ui_add_modlist():
+    pass
+
+
+def ui_add_manually():
+    pass
+
+
+def ui_autoadd():
+    pass
+
+
+def ui_remove_manually():
+    pass
+
+
+def ui_remove_modlist():
+    pass
+
+
+def ui_autoremove():
+    pass
+
+
+def ui_settings():
+    pass
+
+
+def ui_refresh_list():
+    pass
+
+
+def ui_choose_columns():
+    pass
+
+
+def check_mods_for_updates():
+    pass
+
+
+def open_help():
+    pass
+
+
+def open_github():
+    open_link("https://github.com/SimplyTolex/minecraft-mod-updater")     # TODO: move link into a var
+
+
+def open_discussions():
+    open_link("https://github.com/SimplyTolex/minecraft-mod-updater/discussions")
+
+
+def open_docs():
+    open_link("https://github.com/SimplyTolex/minecraft-mod-updater/wiki")
+
+
+def check_updates():
+    update_name = gh_api.check_releases("SimplyTolex", "minecraft-mod-updater")
+    print("r: " + update_name)
+    print("internal: " + internal.version)
+
+    if update_name != internal.version:
+        outcome = messagebox.askyesno(message="A new version of the program had been found.\nDo you want to open the release page in the browser?", title="Update is avaliable!")   # TODO: add link to the "yes" button
+        if outcome == "yes":
+            open_link("")
+    else:
+        messagebox.showinfo(message="You are running the latest version.\nNo update necessary.", title="No updates avaliable")
+
+
+def open_about():
+    about_window = Toplevel(root)
+    about_window.title("About minecraft-mod-updater")   # TODO: Move name of the program into var
+    about_window.geometry("450x300")
+    about_window.resizable(FALSE, FALSE)
+
 
 root = Tk()
 root.title("minecraft-mod-updater")
@@ -66,6 +260,7 @@ root["menu"] = menubar
 
 menu_file = Menu(menubar)
 menu_add = Menu(menu_file)
+menu_remove = Menu(menu_file)
 menu_edit = Menu(menubar)
 menu_view = Menu(menubar)
 menu_mods = Menu(menubar)
@@ -76,129 +271,40 @@ menubar.add_cascade(menu=menu_view, label='View')
 menubar.add_cascade(menu=menu_mods, label='Mods')
 menubar.add_cascade(menu=menu_about, label='About')
 
-menu_file.add_cascade(menu=menu_add, label='Add entry...')
-menu_file.add_command(label='Remove entries')
-menu_file.add_command(label='Rescan `mods` directory')
+menu_file.add_cascade(menu=menu_add, label='Add entries...')
+# menu_file.add_command(label='Remove entries', command=ui_remove_entries)
+menu_file.add_cascade(menu=menu_remove, label='Remove entries...')
+menu_file.add_command(label='Rescan `mods` directory', command=ui_rescan_mods)
 
-menu_add.add_command(label="Add URL")
-menu_add.add_command(label="Bulk-add with modlist file")
-menu_add.add_command(label="Add manually")
-menu_add.add_command(label="Add automatically by mod's filename")
+menu_add.add_command(label="Add URL", command=ui_add_url)
+menu_add.add_command(label="Bulk-add with modlist file", command=ui_add_modlist)
+menu_add.add_command(label="Add manually", command=ui_add_manually)
+menu_add.add_separator()
+menu_add.add_command(label="Add automatically by mod's filename", command=ui_autoadd, state=DISABLED)
 
-menu_edit.add_command(label="Preferences")
+menu_remove.add_command(label="Choose what mods to remove", command=ui_remove_manually)
+menu_remove.add_command(label="Bulk-remove with modlist file", command=ui_remove_modlist)
+menu_remove.add_separator()
+menu_remove.add_command(label="Remove entries not present in `mods` directory", command=ui_autoremove, state=DISABLED)
 
-menu_view.add_command(label="Choose visible columns")
+menu_edit.add_command(label="Preferences", command=ui_settings)
 
-menu_mods.add_command(label="Check all mods for updates")
+menu_view.add_command(label="Refresh list", command=ui_refresh_list)
+menu_view.add_command(label="Choose visible columns", command=ui_choose_columns)
 
-menu_about.add_command(label="Get help")
-menu_about.add_command(label="Open GitHub page")
-menu_about.add_command(label="Open online documentation")
-menu_about.add_command(label="Check program for updates")
-menu_about.add_command(label="About program")
+menu_mods.add_command(label="Check all mods for updates", command=check_mods_for_updates)
 
-
-next_free_row = 1
-modlist = []
-db = ""
-
-
-def get_file_from_parent_dir(filename:str):
-    """
-    Helps me to get files in parent directory.
-    Will be mainly used for development, since regular files should be stored in APPDATA anyway.
-    """
-    CURRENT_DIR = os.path.dirname(__file__)
-    return os.path.abspath(os.path.join(CURRENT_DIR, os.pardir)) + "\\" + filename
-
-
-# Load config
-# TODO: Not sure if I will even use YAML in the future, maybe I will just move everything, including configs to PickleDB
-with open(get_file_from_parent_dir("config.yaml"), "r") as config:
-    cfg = yaml.safe_load(config)
-
-
-def init_modDB():
-    """
-    modDB is a database that stores everything about imported mods (their id, names, versions, etc.)
-    """
-    global db
-    db = pickledb.load(get_file_from_parent_dir("modDB.db"), False)
-
-
-def write_modDB(id:str, name:str, current:str, last_latest:str, url:str):
-    global db
-    db.set("version", 1)
-    db.set(id, {"name": name, "current": current, "last_latest": last_latest, "url": url})
-    # Examples:
-    # write_modDB("AABBCCDDEE", "Sodium", "1.2", "1.2", "example.com")
-    # write_modDB("BBCCDDEEFF", "test_mod_1", "1.0", "1.2", "example.com")
-    db.dump()
-
-
-def get_info_from_db():
-    """
-    Reads the database version and depending on it, does different things.
-    Currently, it will fill out the rows in the GUI with every entry, other then the first one (so, everything but version).
-    """
-    match db.get("version"):
-        case 1:
-            for entry in range(1, db.totalkeys()):
-                print(list(db.getall())[entry])
-                key = (list(db.getall())[entry])
-                print(db.get(key))
-                value = db.get(key)
-
-                fill_row(str(key), str(value["name"]), str(value["current"]), str(value["last_latest"]), str(value["url"]))
-        case _:
-            raise Exception("Undefined database version")
-
-
-def fill_row(id:str, name:str, current:str, latest:str, url:str):
-    global next_free_row
-    global number_column
-    global id_column
-    global name_column
-    global current_column
-    global latest_column
-    global url_column
-
-    mod_number = ttk.Label(mainframe, text=next_free_row, font="TkFixedFont")
-    mod_id = ttk.Label(mainframe, text=id, font="TkFixedFont")
-    mod_name = ttk.Label(mainframe, text=name)
-    mod_current = ttk.Label(mainframe, text=current)
-    mod_latest = ttk.Label(mainframe, text=latest)
-    mod_url = ttk.Label(mainframe, text=url, cursor="hand2", foreground="blue")
-
-    mod_number.grid(column=number_column, row=next_free_row, sticky=W)
-    mod_id.grid(column=id_column, row=next_free_row)
-    mod_name.grid(column=name_column, row=next_free_row)
-    mod_current.grid(column=current_column, row=next_free_row)
-    mod_latest.grid(column=latest_column, row=next_free_row)
-    mod_url.grid(column=url_column, row=next_free_row)
-
-    mod_url.bind("<Button-1>", lambda e: open_link(url))
-
-    next_free_row += 1
-
-
-def import_from_modlist():
-    """
-    Modlist is just a long txt file how batch-importing mods, this is not a database, that the app uses.
-    """
-    global modlist
-
-    with open(get_file_from_parent_dir("modlist.txt"), "r") as list:
-        for line in list:
-            modlist.append(line)
-
-
-def open_link(url):
-    webbrowser.open(url)    # Make sure that the link starts with `https://`
-
+menu_about.add_command(label="Get help", command=open_help)
+menu_about.add_command(label="Open GitHub page", command=open_github)
+menu_about.add_command(label="Open GitHub Discussions", command=open_discussions)
+menu_about.add_command(label="Open online documentation", command=open_docs)
+menu_about.add_separator()
+menu_about.add_command(label="Check program for updates", command=check_updates)
+menu_about.add_separator()
+menu_about.add_command(label="About program", command=open_about)
 
 if __name__ == '__main__':
     init_modDB()
-    get_info_from_db()
+    fill_table_from_db()
 
     root.mainloop()
