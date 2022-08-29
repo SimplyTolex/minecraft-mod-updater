@@ -20,6 +20,7 @@ from tkinter import font
 import yaml
 import os.path
 import pickledb
+import webbrowser
 
 root = Tk()
 root.title("minecraft-mod-updater")
@@ -117,7 +118,7 @@ with open(get_file_from_parent_dir("config.yaml"), "r") as config:
     cfg = yaml.safe_load(config)
 
 
-def load_modDB():
+def init_modDB():
     """
     modDB is a database that stores everything about imported mods (their id, names, versions, etc.)
     """
@@ -167,7 +168,7 @@ def fill_row(id:str, name:str, current:str, latest:str, url:str):
     mod_name = ttk.Label(mainframe, text=name)
     mod_current = ttk.Label(mainframe, text=current)
     mod_latest = ttk.Label(mainframe, text=latest)
-    mod_url = ttk.Label(mainframe, text=url)
+    mod_url = ttk.Label(mainframe, text=url, cursor="hand2", foreground="blue")
 
     mod_number.grid(column=number_column, row=next_free_row, sticky=W)
     mod_id.grid(column=id_column, row=next_free_row)
@@ -175,6 +176,8 @@ def fill_row(id:str, name:str, current:str, latest:str, url:str):
     mod_current.grid(column=current_column, row=next_free_row)
     mod_latest.grid(column=latest_column, row=next_free_row)
     mod_url.grid(column=url_column, row=next_free_row)
+
+    mod_url.bind("<Button-1>", lambda e: open_link(url))
 
     next_free_row += 1
 
@@ -190,7 +193,12 @@ def import_from_modlist():
             modlist.append(line)
 
 
-load_modDB()
-get_info_from_db()
+def open_link(url):
+    webbrowser.open(url)    # Make sure that the link starts with `https://`
 
-root.mainloop()
+
+if __name__ == '__main__':
+    init_modDB()
+    get_info_from_db()
+
+    root.mainloop()
