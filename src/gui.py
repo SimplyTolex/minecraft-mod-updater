@@ -1,4 +1,4 @@
-#not !/usr/bin/env python
+# not !/usr/bin/env python
 # minecraft-mod-updater -- Check updates for Minecraft mods and optionally update them.
 # Copyright (C) 2022  SimplyTolex
 #
@@ -27,6 +27,7 @@ import github_api as gh_api
 import curseforge_api as cf_api
 import modrinth_api as mr_api
 import internal_vars as internal
+from PIL import ImageTk, Image
 
 
 next_free_row = 1
@@ -34,7 +35,7 @@ modlist = []
 db = ""
 
 
-def get_file_from_parent_dir(filename:str):
+def get_file_from_parent_dir(filename: str):
     """
     Helps me to get files in parent directory.
     Will be mainly used for development, since regular files should be stored in APPDATA anyway.
@@ -57,10 +58,11 @@ def init_modDB():
     db = pickledb.load(get_file_from_parent_dir("modDB.db"), False)
 
 
-def write_modDB(id:str, name:str, current:str, last_latest:str, url:str):
+def write_modDB(id: str, name: str, current: str, last_latest: str, url: str):
     global db
     db.set("version", 1)
-    db.set(id, {"name": name, "current": current, "last_latest": last_latest, "url": url})
+    db.set(id, {"name": name, "current": current,
+           "last_latest": last_latest, "url": url})
     # Examples:
     # write_modDB("AABBCCDDEE", "Sodium", "1.2", "1.2", "example.com")
     # write_modDB("BBCCDDEEFF", "test_mod_1", "1.0", "1.2", "example.com")
@@ -80,7 +82,8 @@ def fill_table_from_db():
                 print(db.get(key))
                 value = db.get(key)
 
-                fill_row(str(key), str(value["name"]), str(value["current"]), str(value["last_latest"]), str(value["url"]))
+                fill_row(str(key), str(value["name"]), str(value["current"]), str(
+                    value["last_latest"]), str(value["url"]))
         case _:
             raise Exception("Undefined database version")
 
@@ -96,7 +99,7 @@ def import_from_modlist():
             modlist.append(line)
 
 
-def fill_row(id:str, name:str, current:str, latest:str, url:str):
+def fill_row(id: str, name: str, current: str, latest: str, url: str):
     global next_free_row
     global number_column
     global id_column
@@ -124,7 +127,7 @@ def fill_row(id:str, name:str, current:str, latest:str, url:str):
     next_free_row += 1
 
 
-def open_link(url:str):
+def open_link(url: str):
     webbrowser.open(url)    # Make sure that the link starts with `https://`
 
 
@@ -185,35 +188,87 @@ def open_help():
 
 
 def open_github():
-    open_link("https://github.com/SimplyTolex/minecraft-mod-updater")     # TODO: move link into a var
+    open_link(internal.github_link)     # TODO: move link into a var
 
 
 def open_discussions():
-    open_link("https://github.com/SimplyTolex/minecraft-mod-updater/discussions")
+    open_link(f"{internal.github_link}/discussions")
 
 
 def open_docs():
-    open_link("https://github.com/SimplyTolex/minecraft-mod-updater/wiki")
+    open_link(f"{internal.github_link}/wiki")
 
 
 def check_updates():
-    update_name = gh_api.check_releases("SimplyTolex", "minecraft-mod-updater")
+    update_name = gh_api.check_releases(internal.author, internal.app_name)
     print("r: " + update_name)
     print("internal: " + internal.version)
 
+    # TODO: maybe rewrite it to use tag_names instead(?)
     if update_name != internal.version:
-        outcome = messagebox.askyesno(message="A new version of the program had been found.\nDo you want to open the release page in the browser?", title="Update is avaliable!")   # TODO: add link to the "yes" button
+        outcome = messagebox.askyesno(message="A new version of the program had been found.\nDo you want to open the release page in the browser?",
+                                      title="Update is avaliable!")   # TODO: add link to the "yes" button
         if outcome == "yes":
             open_link("")
     else:
-        messagebox.showinfo(message="You are running the latest version.\nNo update necessary.", title="No updates avaliable")
+        messagebox.showinfo(
+            message="You are running the latest version.\nNo update necessary.", title="No updates avaliable")
 
 
 def open_about():
-    about_window = Toplevel(root)
-    about_window.title("About minecraft-mod-updater")   # TODO: Move name of the program into var
-    about_window.geometry("450x300")
-    about_window.resizable(FALSE, FALSE)
+    about_root = Toplevel(root)
+    about_root.title(f"About {internal.app_name}")
+    # about_window.geometry("450x350")
+    about_root.resizable(FALSE, FALSE)
+
+    # Frames
+    about_mainframe = ttk.Frame(about_root, padding=(10, 10))
+    branding_frame = ttk.Frame(about_mainframe, borderwidth=2)
+    thanks_frame = ttk.Frame(about_mainframe, borderwidth=2)
+
+    # Branding
+    image_path = get_file_from_parent_dir("images\\icon.gif")
+
+    banner = ImageTk.PhotoImage(Image.open(image_path))
+    banner_label = ttk.Label(branding_frame, image=banner, anchor='center')
+    banner_label.image = banner
+
+    about_name = ttk.Label(branding_frame, text=internal.app_name, font="TkHeaderFont", anchor='center')
+    about_label = ttk.Label(branding_frame, text=internal.about_text, justify='center', anchor='center')
+
+    # Thanks
+    about_special_thanks = ttk.Label(thanks_frame, text="Special Thanks to...", font="TkHeaderFont", anchor="center")
+    people_list = ttk.Label(thanks_frame, text=internal.special_thanks, anchor="center", relief="solid", borderwidth=2, justify='center')       # TODO: implement list with canvas instead (or just make it scrollable somehow)
+    
+
+    # Grids
+    about_mainframe.grid(column=0, row=0, sticky=(N, S, E, W))
+    branding_frame.grid(column=0, row=0, sticky=(N, S, E, W))
+    thanks_frame.grid(column=0, row=1, sticky=(N, S, E, W))
+    
+    banner_label.grid(column=0, row=0, sticky=(E, W))
+    about_name.grid(column=0, row=1, sticky=(E, W))
+    about_label.grid(column=0, row=2, sticky=(E, W))
+    
+    about_special_thanks.grid(column=0, row=0, sticky=(E, W))
+    people_list.grid(column=0, row=1, sticky=(N, S, E, W))
+    
+    # Grid configuration
+    about_root.columnconfigure(0, weight=1)
+    about_root.rowconfigure(0, weight=1)
+    
+    about_mainframe.columnconfigure(0, weight=1)
+    about_mainframe.rowconfigure(0, weight=1)
+    about_mainframe.rowconfigure(1, weight=1)
+    
+    branding_frame.columnconfigure(0, weight=1)
+    branding_frame.rowconfigure(0, weight=1)
+    branding_frame.rowconfigure(1, weight=10)
+    branding_frame.rowconfigure(2, weight=10)
+    
+    thanks_frame.columnconfigure(0, weight=1)
+    thanks_frame.rowconfigure(0, weight=1)
+    thanks_frame.rowconfigure(1, weight=10)
 
 
 root = Tk()
@@ -231,7 +286,8 @@ current_column = 3
 latest_column = 4
 url_column = 5
 
-header_font = font.Font(name= "header_font", size=11, weight='bold')    # def size=9; TODO: make settings
+# def size=9; TODO: make settings
+header_font = font.Font(name="header_font", size=11, weight='bold')
 
 number_label = ttk.Label(mainframe, text="№", font=header_font)
 number_label.grid(column=number_column, row=0, sticky=W)
@@ -277,29 +333,38 @@ menu_file.add_cascade(menu=menu_remove, label='Remove entries...')
 menu_file.add_command(label='Rescan `mods` directory', command=ui_rescan_mods)
 
 menu_add.add_command(label="Add URL", command=ui_add_url)
-menu_add.add_command(label="Bulk-add with modlist file", command=ui_add_modlist)
+menu_add.add_command(label="Bulk-add with modlist file",
+                     command=ui_add_modlist)
 menu_add.add_command(label="Add manually", command=ui_add_manually)
 menu_add.add_separator()
-menu_add.add_command(label="Add automatically by mod's filename", command=ui_autoadd, state=DISABLED)
+menu_add.add_command(label="Add automatically by mod's filename",
+                     command=ui_autoadd, state=DISABLED)
 
-menu_remove.add_command(label="Choose what mods to remove", command=ui_remove_manually)
-menu_remove.add_command(label="Bulk-remove with modlist file", command=ui_remove_modlist)
+menu_remove.add_command(
+    label="Choose which mods to remove", command=ui_remove_manually)
+menu_remove.add_command(
+    label="Bulk-remove with modlist file", command=ui_remove_modlist)
 menu_remove.add_separator()
-menu_remove.add_command(label="Remove entries not present in `mods` directory", command=ui_autoremove, state=DISABLED)
+menu_remove.add_command(label="Remove entries not present in `mods` directory",
+                        command=ui_autoremove, state=DISABLED)
 
 menu_edit.add_command(label="Preferences", command=ui_settings)
 
 menu_view.add_command(label="Refresh list", command=ui_refresh_list)
-menu_view.add_command(label="Choose visible columns", command=ui_choose_columns)
+menu_view.add_command(label="Choose visible columns",
+                      command=ui_choose_columns)
 
-menu_mods.add_command(label="Check all mods for updates", command=check_mods_for_updates)
+menu_mods.add_command(label="Check all mods for updates",
+                      command=check_mods_for_updates)
 
 menu_about.add_command(label="Get help", command=open_help)
 menu_about.add_command(label="Open GitHub page", command=open_github)
-menu_about.add_command(label="Open GitHub Discussions", command=open_discussions)
+menu_about.add_command(label="Open GitHub Discussions",
+                       command=open_discussions)
 menu_about.add_command(label="Open online documentation", command=open_docs)
 menu_about.add_separator()
-menu_about.add_command(label="Check program for updates", command=check_updates)
+menu_about.add_command(label="Check program for updates",
+                       command=check_updates)
 menu_about.add_separator()
 menu_about.add_command(label="About program", command=open_about)
 
