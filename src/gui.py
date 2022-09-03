@@ -1,4 +1,3 @@
-# not !/usr/bin/env python
 # minecraft-mod-updater -- Check updates for Minecraft mods and optionally update them.
 # Copyright (C) 2022  SimplyTolex
 #
@@ -100,6 +99,7 @@ def import_from_modlist():
 
 
 def fill_row(id: str, name: str, current: str, latest: str, url: str):
+    # TODO: rewrite with Treeview
     global next_free_row
     global number_column
     global id_column
@@ -131,14 +131,6 @@ def open_link(url: str):
     webbrowser.open(url)    # Make sure that the link starts with `https://`
 
 
-def ui_remove_entries():
-    pass
-
-
-def ui_rescan_mods():
-    pass
-
-
 def ui_add_url():
     pass
 
@@ -167,9 +159,22 @@ def ui_autoremove():
     pass
 
 
-def ui_settings():
+def ui_rescan_mods_dir():
     pass
 
+
+def ui_settings():
+    settings_root = Toplevel(root)
+    settings_root.title("Preferences")
+    # settings_root.resizable(FALSE, FALSE)
+    
+    settings_mainframe = ttk.Frame(settings_root, padding=(10, 10))
+    
+    test_check = ttk.Checkbutton(settings_mainframe, text="test")
+    
+    settings_mainframe.grid(column=0, row=0)
+    
+    test_check.grid(column=0, row=0)
 
 def ui_refresh_list():
     pass
@@ -200,6 +205,7 @@ def open_docs():
 
 
 def check_updates():
+    # TODO: maybe add a popup, telling the user that you *are* actually checking updates
     update_name = gh_api.check_releases(internal.author, internal.app_name)
     print("r: " + update_name)
     print("internal: " + internal.version)
@@ -234,6 +240,7 @@ def open_about():
     banner_label.image = banner
 
     about_name = ttk.Label(branding_frame, text=internal.app_name, font="TkHeaderFont", anchor='center')
+    about_version = ttk.Label(branding_frame, text=f"v{internal.version}", justify='center', anchor='center', font="TkFixedFont")
     about_label = ttk.Label(branding_frame, text=internal.about_text, justify='center', anchor='center')
 
     # Thanks
@@ -248,7 +255,8 @@ def open_about():
     
     banner_label.grid(column=0, row=0, sticky=(E, W))
     about_name.grid(column=0, row=1, sticky=(E, W))
-    about_label.grid(column=0, row=2, sticky=(E, W))
+    about_version.grid(column=0, row=2, sticky=(E, W))
+    about_label.grid(column=0, row=3, sticky=(E, W))
     
     about_special_thanks.grid(column=0, row=0, sticky=(E, W))
     people_list.grid(column=0, row=1, sticky=(N, S, E, W))
@@ -265,6 +273,7 @@ def open_about():
     branding_frame.rowconfigure(0, weight=1)
     branding_frame.rowconfigure(1, weight=10)
     branding_frame.rowconfigure(2, weight=10)
+    branding_frame.rowconfigure(3, weight=10)
     
     thanks_frame.columnconfigure(0, weight=1)
     thanks_frame.rowconfigure(0, weight=1)
@@ -330,7 +339,7 @@ menubar.add_cascade(menu=menu_about, label='About')
 menu_file.add_cascade(menu=menu_add, label='Add entries...')
 # menu_file.add_command(label='Remove entries', command=ui_remove_entries)
 menu_file.add_cascade(menu=menu_remove, label='Remove entries...')
-menu_file.add_command(label='Rescan `mods` directory', command=ui_rescan_mods)
+menu_file.add_command(label='Rescan `mods` directory', command=ui_rescan_mods_dir)
 
 menu_add.add_command(label="Add URL", command=ui_add_url)
 menu_add.add_command(label="Bulk-add with modlist file",

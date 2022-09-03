@@ -1,7 +1,8 @@
 # NOTE: this file contains different variables so they could be keeped in one place. *Do not* modify this file.
 # If you were looking to change settings or preferences then go to `preferences.db`
 
-version = "this is a test release"
+# version = "this is a test release"
+version = "0.1"
 author = "SimplyTolex"
 app_name = "minecraft-mod-updater"
 github_link = "https://github.com/SimplyTolex/minecraft-mod-updater"
