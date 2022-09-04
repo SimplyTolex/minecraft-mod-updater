@@ -272,16 +272,19 @@ def tree_event_handler(one):    # TODO: fix this func having an unused var
     if clicked_column != "#0":  # prevents overflow to the last column
         clicked_column = (tree['columns'][int(clicked_column[1:])-1])   # accouting for the `#0`, which is missing from 'columns'
     print(f"Clicked column name: {clicked_column}")
-    clicked_row = int(clicked_row[1:], base=16)
-    print(f"Clicked row (base10): {clicked_row}")
+    if clicked_row == "":
+        print("Clicked on header")    # TODO: make a sorting when clicking on headers
+    else:
+        clicked_row = int(clicked_row[1:], base=16)
+        print(f"Clicked row (base10): {clicked_row}")
 
-    match clicked_column:
-        case "link":
-            key_lookup = (list(db.getall())[clicked_row])
-            print(f"Opening URL: {db.get(key_lookup)['url']}")
-            open_link(db.get(key_lookup)['url'])
-        case "latest":
-            print('hi dad')
+        match clicked_column:
+            case "link":
+                key_lookup = (list(db.getall())[clicked_row])
+                print(f"Opening URL: {db.get(key_lookup)['url']}")
+                open_link(db.get(key_lookup)['url'])
+            case "latest":
+                print('hi dad')
 
 
 root = Tk()
