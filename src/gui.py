@@ -79,20 +79,19 @@ def fill_treeview_from_db():
     Currently, it will fill out the rows in the GUI with every entry, other then the first one (so, everything but version).
     """
     global next_free_row
-    
+
     match db.get("version"):
         case 1:
             for entry in range(1, db.totalkeys()):
                 key = (list(db.getall())[entry])
                 value = db.get(key)
-                
+
                 ext = tldextract.extract(str(value['url']))
                 tld_url = '.'.join(part for part in ext if part)
-                
-                tree.insert('', 'end', text=next_free_row, values=(str(key), str(value['name']), str(value['current']), str(value['last_latest']), tld_url))
-                
-                next_free_row += 1
 
+                tree.insert('', 'end', text=next_free_row, values=(str(key), str(value['name']), str(value['current']), str(value['last_latest']), tld_url))
+
+                next_free_row += 1
         case _:
             raise Exception("Undefined database version")
 
@@ -106,35 +105,6 @@ def import_from_modlist():
     with open(get_file_from_parent_dir("modlist.txt"), "r") as list:
         for line in list:
             modlist.append(line)
-
-
-# def fill_row(id: str, name: str, current: str, latest: str, url: str):
-#     # TODO: rewrite with Treeview
-#     global next_free_row
-#     global number_column
-#     global id_column
-#     global name_column
-#     global current_column
-#     global latest_column
-#     global url_column
-
-#     mod_number = ttk.Label(mainframe, text=next_free_row, font="TkFixedFont")
-#     mod_id = ttk.Label(mainframe, text=id, font="TkFixedFont")
-#     mod_name = ttk.Label(mainframe, text=name)
-#     mod_current = ttk.Label(mainframe, text=current)
-#     mod_latest = ttk.Label(mainframe, text=latest)
-#     mod_url = ttk.Label(mainframe, text=url, cursor="hand2", foreground="blue")
-
-#     mod_number.grid(column=number_column, row=next_free_row, sticky=W)
-#     mod_id.grid(column=id_column, row=next_free_row)
-#     mod_name.grid(column=name_column, row=next_free_row)
-#     mod_current.grid(column=current_column, row=next_free_row)
-#     mod_latest.grid(column=latest_column, row=next_free_row)
-#     mod_url.grid(column=url_column, row=next_free_row)
-
-#     mod_url.bind("<Button-1>", lambda e: open_link(url))
-
-#     next_free_row += 1
 
 
 def open_link(url: str):
@@ -178,13 +148,13 @@ def ui_settings():
     settings_root = Toplevel(root)
     settings_root.title("Preferences")
     # settings_root.resizable(FALSE, FALSE)
-    
+
     settings_mainframe = ttk.Frame(settings_root, padding=(10, 10))
-    
+
     test_check = ttk.Checkbutton(settings_mainframe, text="test")
-    
+
     settings_mainframe.grid(column=0, row=0)
-    
+
     test_check.grid(column=0, row=0)
 
 def ui_refresh_list():
@@ -233,7 +203,7 @@ def check_updates():
 
 
 def open_about():
-    # TODO: make the about_root grab focus when opened 
+    # TODO: make the about_root grab focus when opened
     about_root = Toplevel(root)
     about_root.title(f"About {internal.app_name}")
     # about_window.geometry("450x350")
@@ -258,38 +228,60 @@ def open_about():
     # Thanks
     about_special_thanks = ttk.Label(thanks_frame, text="Special Thanks to...", font="TkHeaderFont", anchor="center")
     people_list = ttk.Label(thanks_frame, text=internal.special_thanks, anchor="center", relief="solid", borderwidth=2, justify='center')       # TODO: implement list with canvas instead (or just make it scrollable somehow)
-    
 
     # Grids
     about_mainframe.grid(column=0, row=0, sticky=(N, S, E, W))
     branding_frame.grid(column=0, row=0, sticky=(N, S, E, W))
     thanks_frame.grid(column=0, row=1, sticky=(N, S, E, W))
-    
+
     banner_label.grid(column=0, row=0, sticky=(E, W))
     about_name.grid(column=0, row=1, sticky=(E, W))
     about_version.grid(column=0, row=2, sticky=(E, W))
     about_label.grid(column=0, row=3, sticky=(E, W))
-    
+
     about_special_thanks.grid(column=0, row=0, sticky=(E, W))
     people_list.grid(column=0, row=1, sticky=(N, S, E, W))
-    
+
     # Grid configuration
     about_root.columnconfigure(0, weight=1)
     about_root.rowconfigure(0, weight=1)
-    
+
     about_mainframe.columnconfigure(0, weight=1)
     about_mainframe.rowconfigure(0, weight=1)
     about_mainframe.rowconfigure(1, weight=1)
-    
+
     branding_frame.columnconfigure(0, weight=1)
     branding_frame.rowconfigure(0, weight=1)
     branding_frame.rowconfigure(1, weight=10)
     branding_frame.rowconfigure(2, weight=10)
     branding_frame.rowconfigure(3, weight=10)
-    
+
     thanks_frame.columnconfigure(0, weight=1)
     thanks_frame.rowconfigure(0, weight=1)
     thanks_frame.rowconfigure(1, weight=10)
+
+
+def tree_event_handler(one):    # TODO: fix this func having an unused var
+    x = root.winfo_pointerx() - root.winfo_rootx()
+    y = root.winfo_pointery() - root.winfo_rooty()
+    print(f"Clicked on: x = {x} / y = {y}")
+    clicked_column = tree.identify_column(x)
+    clicked_row = tree.identify_row(y)
+
+    # ('#0')('id', 'name', 'current', 'latest', 'link')
+    if clicked_column != "#0":  # prevents overflow to the last column
+        clicked_column = (tree['columns'][int(clicked_column[1:])-1])   # accouting for the `#0`, which is missing from 'columns'
+    print(f"Clicked column name: {clicked_column}")
+    clicked_row = int(clicked_row[1:], base=16)
+    print(f"Clicked row (base10): {clicked_row}")
+
+    match clicked_column:
+        case "link":
+            key_lookup = (list(db.getall())[clicked_row])
+            print(f"Opening URL: {db.get(key_lookup)['url']}")
+            open_link(db.get(key_lookup)['url'])
+        case "latest":
+            print('hi dad')
 
 
 root = Tk()
@@ -310,19 +302,6 @@ url_column = 5
 # def size=9; TODO: make settings
 header_font = font.Font(name="header_font", size=11, weight='bold')
 
-# number_label = ttk.Label(mainframe, text="№", font=header_font)
-# number_label.grid(column=number_column, row=0, sticky=W)
-# id_label = ttk.Label(mainframe, text="ID", font=header_font)
-# id_label.grid(column=id_column, row=0)
-# name_label = ttk.Label(mainframe, text="Name", font=header_font)
-# name_label.grid(column=name_column, row=0)
-# current_label = ttk.Label(mainframe, text="Current", font=header_font)
-# current_label.grid(column=current_column, row=0)
-# latest_label = ttk.Label(mainframe, text="Latest", font=header_font)
-# latest_label.grid(column=latest_column, row=0)
-# url_label = ttk.Label(mainframe, text="URL", font=header_font)
-# url_label.grid(column=url_column, row=0)
-
 mainframe.columnconfigure(0, weight=1)
 # mainframe.columnconfigure(1, weight=20)
 # mainframe.columnconfigure(2, weight=50)
@@ -331,6 +310,7 @@ mainframe.columnconfigure(0, weight=1)
 # mainframe.columnconfigure(5, weight=30)
 mainframe.rowconfigure(0, weight=1)
 
+# TODO: add theming for headers and links
 tree = ttk.Treeview(mainframe, columns=('id', 'name', 'current', 'latest', 'link'))
 tree.heading('#0', text='№')
 tree.column('#0', width=50, anchor='w')
@@ -350,25 +330,7 @@ scrollbar = ttk.Scrollbar(root, orient=['vertical'], command=tree.yview)
 tree.configure(yscroll=scrollbar.set)
 scrollbar.grid(row=0, column=1, sticky='ns')
 
-def tree_event_handler(one):
-    print(root.winfo_pointerx())
-    x = root.winfo_pointerx()
-    print(tree.identify_column(x))
-    match tree.identify_column(x):
-        case "#5": 
-            pass
-
-#     mod_url.bind("<Button-1>", lambda e: open_link(url))
 tree.bind('<Button-1>', tree_event_handler)
-
-
-# tree.insert("", 'end', 'id1', text="test 1")
-# tree.insert("", 'end', text="test 2")
-# tree.insert("id1", 'end', text="test 3")
-# tree.set('id1', 'name', '12KB')
-
-# for i in range(15):
-#     tree.insert('', 'end', text=i, values=('AABBCCDDEE', 'test_mod_1', '1.0', '1.4', 'https://example.com'))
 
 root.option_add('*tearOff', FALSE)
 menubar = Menu(root)
