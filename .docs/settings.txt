@@ -1,0 +1,11 @@
+general
+- app type  (will always be standalone, no setting needed)
+    - standalone (db gets saved in %APPDATA%)
+visual
+- font size
+misc
+- purge tldextract cache
+- github login (how to store passwords?)
+
+other stuff that wont be in settings window but will be stored there
+- visible columns

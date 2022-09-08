@@ -34,6 +34,7 @@ next_free_row = 1
 modlist = []
 db = ""
 
+# TODO: add ability to 'freeze' or 'ignore' new versions of a mod
 
 def get_file_from_parent_dir(filename: str):
     """
@@ -150,12 +151,53 @@ def ui_settings():
     # settings_root.resizable(FALSE, FALSE)
 
     settings_mainframe = ttk.Frame(settings_root, padding=(10, 10))
+    settings_mainframe.grid()
 
-    test_check = ttk.Checkbutton(settings_mainframe, text="test")
+    notebook = ttk.Notebook(settings_mainframe)
+    notebook.grid()
 
-    settings_mainframe.grid(column=0, row=0)
+    # create frames
+    f_general = ttk.Frame(notebook, width=400, height=280, padding=10)
+    f_visual = ttk.Frame(notebook, width=400, height=280, padding=10)
+    f_misc = ttk.Frame(notebook, width=400, height=280, padding=10)
 
-    test_check.grid(column=0, row=0)
+    f_general.grid()
+    f_visual.grid()
+    f_misc.grid()
+
+    # add frames to notebook
+    notebook.add(f_general, text='General')
+    notebook.add(f_visual, text='Visual')
+    notebook.add(f_misc, text='Misc')
+    
+    apply_button = ttk.Button(settings_mainframe, text="Apply")
+    apply_button.grid(column=0, row=1)
+    
+    nothing_label = ttk.Label(f_general, text="There is nothing so far")
+    opt_in_prereleases = ttk.Checkbutton(f_general, text="Also update to pre-release versions")
+    nothing2_label = ttk.Label(f_visual, text="There is should be font size settings, but I didn't made them yet")
+    
+    nothing_label.grid()
+    opt_in_prereleases.grid(row=1, column=0)
+    nothing2_label.grid()
+    
+    purge_tld_cache = ttk.Button(f_misc, text="Purge tldextract cache")
+    purge_tld_cache_explain = ttk.Label(f_misc, text="See this link: hpspaihpeoahnopwhnxfoai")
+    purge_tld_cache.grid(column=1, row=1)
+    purge_tld_cache_explain.grid(column=1, row=2)
+    
+    github_login_frame = ttk.Labelframe(f_misc, padding=10, borderwidth=2, relief='solid', text="Signin to Github")
+    github_login_username_label = ttk.Label(github_login_frame, text="Username or email address", justify='left')
+    github_login_username = ttk.Entry(github_login_frame)
+    github_login_password_label = ttk.Label(github_login_frame, text="Password", justify='left')
+    github_login_password = ttk.Entry(github_login_frame, show='*')
+    
+    github_login_frame.grid(column=2, row=1)
+    github_login_username_label.grid(column=1, row=1)
+    github_login_username.grid(column=1, row=2)
+    github_login_password_label.grid(column=1, row=3)
+    github_login_password.grid(column=1, row=4)
+
 
 def ui_refresh_list():
     pass
@@ -174,7 +216,7 @@ def open_help():
 
 
 def open_github():
-    open_link(internal.github_link)     # TODO: move link into a var
+    open_link(internal.github_link)
 
 
 def open_discussions():
@@ -268,27 +310,29 @@ def tree_event_handler(one):    # TODO: fix this func having an unused var
     clicked_column = tree.identify_column(x)
     clicked_row = tree.identify_row(y)
 
-    # ('#0')('id', 'name', 'current', 'latest', 'link')
-    if clicked_column != "#0":  # prevents overflow to the last column
-        clicked_column = (tree['columns'][int(clicked_column[1:])-1])   # accouting for the `#0`, which is missing from 'columns'
-    print(f"Clicked column name: {clicked_column}")
-    if clicked_row == "":
-        print("Clicked on header")    # TODO: make a sorting when clicking on headers
-    else:
-        clicked_row = int(clicked_row[1:], base=16)
-        print(f"Clicked row (base10): {clicked_row}")
+    # We do nothing if x = 0 or y = 0 because it leads to errors and also nothing highlights when you click on stuff this way, so technically you aren't clicking anything.
+    if (x != 0) and (y != 0):
+        if clicked_column != "#0":  # prevents overflow to the last column; prevents ValueError invalid literal for int() with base 10: ''
+            clicked_column = (tree['columns'][int(clicked_column[1:])-1])   # accouting for the `#0`, which is missing from 'columns'
+        print(f"Clicked column name: {clicked_column}")
 
-        match clicked_column:
-            case "link":
-                key_lookup = (list(db.getall())[clicked_row])
-                print(f"Opening URL: {db.get(key_lookup)['url']}")
-                open_link(db.get(key_lookup)['url'])
-            case "latest":
-                print('hi dad')
+        if clicked_row == "" or y <= 24:    # POV: you are working around tk's bugs
+            print("Clicked on header")    # TODO: make a sorting when clicking on headers
+        else:
+            clicked_row = int(clicked_row[1:], base=16)
+            print(f"Clicked row (base10): {clicked_row}")
+
+            match clicked_column:
+                case "link":
+                    key_lookup = (list(db.getall())[clicked_row])
+                    print(f"Opening URL: {db.get(key_lookup)['url']}")
+                    open_link(db.get(key_lookup)['url'])
+                case "latest":
+                    print('hi dad')     # TODO: check for updates for a clicked mod when user clicks on latest version
 
 
 root = Tk()
-root.title("minecraft-mod-updater")
+root.title(internal.app_name)
 
 mainframe = ttk.Frame(root)
 mainframe.grid(column=0, row=0, sticky=(N, W, E, S))
@@ -353,7 +397,6 @@ menubar.add_cascade(menu=menu_mods, label='Mods')
 menubar.add_cascade(menu=menu_about, label='About')
 
 menu_file.add_cascade(menu=menu_add, label='Add entries...')
-# menu_file.add_command(label='Remove entries', command=ui_remove_entries)
 menu_file.add_cascade(menu=menu_remove, label='Remove entries...')
 menu_file.add_command(label='Rescan `mods` directory', command=ui_rescan_mods_dir)
 

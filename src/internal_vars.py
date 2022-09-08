@@ -1,7 +1,6 @@
 # NOTE: this file contains different variables so they could be keeped in one place. *Do not* modify this file.
 # If you were looking to change settings or preferences then go to `preferences.db`
 
-# version = "this is a test release"
 version = "0.1"
 author = "SimplyTolex"
 app_name = "minecraft-mod-updater"
@@ -12,3 +11,6 @@ Thanks.. I guess!"""
 special_thanks = """Regents of the University of California
 Ford Focus
 G-Man"""
+
+if __name__ == "__main__":
+    print("IV | `internal_vars.py` is not supposed to be run like that! Execute `gui.py` instead!")
