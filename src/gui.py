@@ -19,7 +19,6 @@ from tkinter import *
 from tkinter import ttk
 from tkinter import font
 from tkinter import messagebox
-import yaml
 import os.path
 import pickledb
 import webbrowser
@@ -29,10 +28,12 @@ import modrinth_api as mr_api
 import internal_vars as internal
 from PIL import ImageTk, Image
 import tldextract
+import shutil
 
 next_free_row = 1
 modlist = []
 db = ""
+config = ""
 verbose = True
 modqueue = []
 
@@ -50,10 +51,20 @@ def get_file_from_parent_dir(filename: str):
     return os.path.abspath(os.path.join(CURRENT_DIR, os.pardir)) + "\\" + filename
 
 
-# Load config
-# TODO: Not sure if I will even use YAML in the future, maybe I will just move everything, including configs to PickleDB
-with open(get_file_from_parent_dir("config.yaml"), "r") as config:
-    cfg = yaml.safe_load(config)
+# # Load config
+# # TODO: Not sure if I will even use YAML in the future, maybe I will just move everything, including configs to PickleDB
+# with open(get_file_from_parent_dir("config.yaml"), "r") as config:
+#     cfg = yaml.safe_load(config)
+
+def load_config():
+    global config
+    if os.path.exists(get_file_from_parent_dir("settings.jsonc")):
+        config = pickledb.load(get_file_from_parent_dir("settings.jsonc"), True)
+        verboseprint("Loaded settings.jsonc")
+    else:
+        shutil.copyfile(get_file_from_parent_dir("default_settings.jsonc"), get_file_from_parent_dir("settings.jsonc"))
+        verboseprint("Copied default_settings.jsonc to settings.jsonc to use as config file")
+        load_config()
 
 
 def load_modDB():
@@ -61,12 +72,13 @@ def load_modDB():
     modDB is a database that stores everything about imported mods (their id, names, versions, etc.)
     """
     global db
-    db = pickledb.load(get_file_from_parent_dir("modDB.db"), False)
+    db = pickledb.load(get_file_from_parent_dir("modDB.json"), False)
     
     match db.get("version"):    # later, this will check the version of the modDB and call a function to convert the old versions of the modDB to a new ones. Right now this isn't necessary, since there are no other versions
         case 1:
-            pass
+            verboseprint("Loaded modDB version 1")
         case _:
+            print(db.get("version"))
             raise Exception("Undefined database version")
 
 
@@ -74,20 +86,21 @@ def read_modDB():
     pass
 
 
-# def write_modDB(id: str, name: str, current: str, last_latest: str, url: str):
-#     global db
-#     db.set("version", 1)
-#     db.set(id, {"name": name, "current": current,
-#            "last_latest": last_latest, "url": url})
-#     # Examples:
-#     # write_modDB("AABBCCDDEE", "Sodium", "1.2", "1.2", "example.com")
-#     # write_modDB("BBCCDDEEFF", "test_mod_1", "1.0", "1.2", "example.com")
-#     db.dump()
-
-
-# def write_modDB(queue: list):
-#     global db
+def write_modDB(queue: list):   # TODO: fix ids maybe being the same from different sites, which will overwrite the other entry
+    """
+    Gets a queue, then sets all the keys from the queue, then dumps it into modDB file.
+    Currently, you need to provide *all* of the keys or else they will be lost.
     
+    Avaliable keys: "id": str, "name": str, "current": str, "last_latest": str, "url": str.
+    
+    Queue should look like this: [{"id": "AABBCCDD", "name": "foo mod", etc...}, {"id2": "EEFFGGHH", "name2": "chocolate bar", etc...}, etc...]
+    """
+    global db
+    
+    db.set("version", 1)
+    for entry in queue:
+        db.set(entry["id"], {"name": entry["name"],  "current": entry["current"], "last_latest": entry["last_latest"], "url": entry["url"]})
+    db.dump()
 
 
 def fill_treeview_from_db():
@@ -456,7 +469,9 @@ menu_about.add_separator()
 menu_about.add_command(label="About program", command=open_about)
 
 if __name__ == '__main__':
+    load_config()
     load_modDB()
+    # write_modDB([{"id": "3", "name": "modDB write test", "current": "1.4.4", "last_latest": "1.4.5", "url": "https://example.com"}, {"id": "4", "name": "modDB write test 2", "current": "1.4", "last_latest": "1.4.4", "url": "https://example.com"}])
     fill_treeview_from_db()
 
     root.mainloop()

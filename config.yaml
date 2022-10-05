@@ -1,4 +1,0 @@
-version: 1
-test:
-- test: 2
-- second: third

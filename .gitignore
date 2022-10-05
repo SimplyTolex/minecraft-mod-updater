@@ -1,8 +1,10 @@
 modDB*.db
+modDB*.json*
 myModList.txt
 modlist.txt
 /**/__pycache__
 settings.db
+settings.json*
 .notes/
 
 # Created by https://www.toptal.com/developers/gitignore/api/python,windows
