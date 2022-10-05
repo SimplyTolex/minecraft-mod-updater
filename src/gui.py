@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+# from tabnanny import verbose
 from tkinter import *
 from tkinter import ttk
 from tkinter import font
@@ -29,12 +30,16 @@ import internal_vars as internal
 from PIL import ImageTk, Image
 import tldextract
 
-
 next_free_row = 1
 modlist = []
 db = ""
+verbose = True
+modqueue = []
 
 # TODO: add ability to 'freeze' or 'ignore' new versions of a mod
+# TODO: add ability to choose whether you want to update to a stable or to a beta or to an alpha version of the mod
+
+verboseprint = print if verbose else lambda *a, **k: None
 
 def get_file_from_parent_dir(filename: str):
     """
@@ -57,21 +62,32 @@ def load_modDB():
     """
     global db
     db = pickledb.load(get_file_from_parent_dir("modDB.db"), False)
+    
+    match db.get("version"):    # later, this will check the version of the modDB and call a function to convert the old versions of the modDB to a new ones. Right now this isn't necessary, since there are no other versions
+        case 1:
+            pass
+        case _:
+            raise Exception("Undefined database version")
 
 
 def read_modDB():
     pass
 
 
-def write_modDB(id: str, name: str, current: str, last_latest: str, url: str):
-    global db
-    db.set("version", 1)
-    db.set(id, {"name": name, "current": current,
-           "last_latest": last_latest, "url": url})
-    # Examples:
-    # write_modDB("AABBCCDDEE", "Sodium", "1.2", "1.2", "example.com")
-    # write_modDB("BBCCDDEEFF", "test_mod_1", "1.0", "1.2", "example.com")
-    db.dump()
+# def write_modDB(id: str, name: str, current: str, last_latest: str, url: str):
+#     global db
+#     db.set("version", 1)
+#     db.set(id, {"name": name, "current": current,
+#            "last_latest": last_latest, "url": url})
+#     # Examples:
+#     # write_modDB("AABBCCDDEE", "Sodium", "1.2", "1.2", "example.com")
+#     # write_modDB("BBCCDDEEFF", "test_mod_1", "1.0", "1.2", "example.com")
+#     db.dump()
+
+
+# def write_modDB(queue: list):
+#     global db
+    
 
 
 def fill_treeview_from_db():
@@ -81,20 +97,16 @@ def fill_treeview_from_db():
     """
     global next_free_row
 
-    match db.get("version"):
-        case 1:
-            for entry in range(1, db.totalkeys()):
-                key = (list(db.getall())[entry])
-                value = db.get(key)
+    for entry in range(1, db.totalkeys()):
+        key = (list(db.getall())[entry])
+        value = db.get(key)
 
-                ext = tldextract.extract(str(value['url']))
-                tld_url = '.'.join(part for part in ext if part)
+        ext = tldextract.extract(str(value['url']))
+        tld_url = '.'.join(part for part in ext if part)
 
-                tree.insert('', 'end', text=next_free_row, values=(str(key), str(value['name']), str(value['current']), str(value['last_latest']), tld_url))
+        tree.insert('', 'end', text=next_free_row, values=(str(key), str(value['name']), str(value['current']), str(value['last_latest']), tld_url))
 
-                next_free_row += 1
-        case _:
-            raise Exception("Undefined database version")
+        next_free_row += 1
 
 
 def import_from_modlist():
@@ -107,6 +119,13 @@ def import_from_modlist():
         for line in list:
             modlist.append(line)
 
+
+def scan_mods_dir():
+    """
+    This will scan %APPDATA%/Minecraft/mods directory for changes, they will be used for stuff like automatically removing mods, that don't exist in the folder anymore, from modDB
+    """
+    pass
+    
 
 def open_link(url: str):
     webbrowser.open(url)    # Make sure that the link starts with `https://`
@@ -230,8 +249,8 @@ def open_docs():
 def check_updates():
     # TODO: maybe add a popup, telling the user that you *are* actually checking updates
     update_name = gh_api.check_releases(internal.author, internal.app_name)
-    print("r: " + update_name)
-    print("internal: " + internal.version)
+    verboseprint("r: " + update_name)
+    verboseprint("internal: " + internal.version)
 
     # TODO: maybe rewrite it to use tag_names instead(?)
     if update_name != internal.version:
@@ -303,10 +322,10 @@ def open_about():
     thanks_frame.rowconfigure(1, weight=10)
 
 
-def tree_event_handler(one):    # TODO: fix this func having an unused var
-    x = root.winfo_pointerx() - root.winfo_rootx()
-    y = root.winfo_pointery() - root.winfo_rooty()
-    print(f"Clicked on: x = {x} / y = {y}")
+def tree_event_handler(event):
+    x = event.x
+    y = event.y
+    verboseprint(f"{x}, {y}")
     clicked_column = tree.identify_column(x)
     clicked_row = tree.identify_row(y)
 
@@ -314,18 +333,18 @@ def tree_event_handler(one):    # TODO: fix this func having an unused var
     if (x != 0) and (y != 0):
         if clicked_column != "#0":  # prevents overflow to the last column; prevents ValueError invalid literal for int() with base 10: ''
             clicked_column = (tree['columns'][int(clicked_column[1:])-1])   # accouting for the `#0`, which is missing from 'columns'
-        print(f"Clicked column name: {clicked_column}")
+        verboseprint(f"Clicked column name: {clicked_column}")
 
         if clicked_row == "" or y <= 24:    # POV: you are working around tk's bugs
-            print("Clicked on header")    # TODO: make a sorting when clicking on headers
+            verboseprint("Clicked on header")    # TODO: make a sorting when clicking on headers
         else:
             clicked_row = int(clicked_row[1:], base=16)
-            print(f"Clicked row (base10): {clicked_row}")
+            verboseprint(f"Clicked row (base10): {clicked_row}")
 
             match clicked_column:
                 case "link":
                     key_lookup = (list(db.getall())[clicked_row])
-                    print(f"Opening URL: {db.get(key_lookup)['url']}")
+                    verboseprint(f"Opening URL: {db.get(key_lookup)['url']}")
                     open_link(db.get(key_lookup)['url'])
                 case "latest":
                     print('hi dad')     # TODO: check for updates for a clicked mod when user clicks on latest version
